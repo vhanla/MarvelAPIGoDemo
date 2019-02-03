@@ -1,27 +1,28 @@
 package main
 
 import (
+	"crypto/md5"
+	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"image/jpeg"
 	"io"
-	"os"
-	"os/exec"
-	"runtime"
-	"fmt"
-	"strconv"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"os/exec"
+	"runtime"
+	"strconv"
 	"strings"
 	"time"
-	"crypto/md5"
-	"encoding/hex"
-	"encoding/json"
 
 	"github.com/jroimartin/gocui"
 	"github.com/nfnt/resize"
 	"github.com/qeesung/image2ascii/convert"
 )
+
 // Your Marvel Credentials goes here
 const PRIVATEKEY = "YOUR_MARVEL_PRIVATE_KEY"
 const PUBLICKEY = "YOUR_MARVEL_PUBLIC_KEY"
@@ -30,47 +31,47 @@ const OPTLIST = "2. List"
 const OPTEXIT = "Exit [^C]"
 
 type MarvelData struct {
-	Code int `json:"code"`
-	Status string `json:"status"`
+	Code      int    `json:"code"`
+	Status    string `json:"status"`
 	Copyright string `json:"copyright"`
-	AttrTxt string `json:"attributionText"`
-	AttrHtml string `json:"attributionHTML"`
-	Etag string `json:"etag"`
-	Datos Data `json:"data"`
+	AttrTxt   string `json:"attributionText"`
+	AttrHtml  string `json:"attributionHTML"`
+	Etag      string `json:"etag"`
+	Datos     Data   `json:"data"`
 }
 type Data struct {
-	Offset int `json:"offset"`
-	Limit int `json:"limit"`
-	Total int `json:"total"`
-	Count int `json:"count"`
+	Offset  int      `json:"offset"`
+	Limit   int      `json:"limit"`
+	Total   int      `json:"total"`
+	Count   int      `json:"count"`
 	Results []Result `json:"results"`
 }
 
 type Result struct {
-	Id int `json:"id"`
-	Name string `json:"name"`
-	Description string `json:"description"`
-	Modified int64 `json:"modified"`
-	Picture Thumbnail `json:"thumbnail"`
-	ResUri string `json:"resourceURI"`
-	Comics Comic `json:"comics"`
+	Id          int       `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Modified    int64     `json:"modified"`
+	Picture     Thumbnail `json:"thumbnail"`
+	ResUri      string    `json:"resourceURI"`
+	Comics      Comic     `json:"comics"`
 }
 
 type Thumbnail struct {
 	Path string `json:"path"`
-	Ext string `json:"extension"`
+	Ext  string `json:"extension"`
 }
 
 type Comic struct {
-	Available int `json:"available"`
-	CollectionUri string `json:"collectionURI"`
-	Items []ComicItem `json:"items"`
-	Returned int `json:"returned"`
+	Available     int         `json:"available"`
+	CollectionUri string      `json:"collectionURI"`
+	Items         []ComicItem `json:"items"`
+	Returned      int         `json:"returned"`
 }
 
 type ComicItem struct {
 	ResUri string `json:"resourceURI"`
-	Name string `json:"name"`
+	Name   string `json:"name"`
 }
 
 func main() {
@@ -93,12 +94,11 @@ func main() {
 		log.Panicln(err)
 	}
 
-
 }
 
 func nextView(g *gocui.Gui, v *gocui.View) error {
 	if v == nil || v.Name() == "side" {
-		_ , err := g.SetCurrentView("main")
+		_, err := g.SetCurrentView("main")
 		return err
 	}
 	_, err := g.SetCurrentView("side")
@@ -110,12 +110,12 @@ func cursorDown(g *gocui.Gui, v *gocui.View) error {
 		var l string
 		var err error
 		cx, cy := v.Cursor()
-		if l, err = v.Line(cy+1); err != nil {
+		if l, err = v.Line(cy + 1); err != nil {
 			l = ""
 		}
-		if (l == "") {
+		if l == "" {
 			return nil
-		} else{
+		} else {
 
 			if err := v.SetCursor(cx, cy+1); err != nil {
 				ox, oy := v.Origin()
@@ -132,8 +132,8 @@ func cursorUp(g *gocui.Gui, v *gocui.View) error {
 	if v != nil {
 		ox, oy := v.Origin()
 		cx, cy := v.Cursor()
-		if err := v.SetCursor(cx, cy -1); err != nil && oy > 0 {
-			if err := v.SetOrigin(ox, oy -1 ); err != nil {
+		if err := v.SetCursor(cx, cy-1); err != nil && oy > 0 {
+			if err := v.SetOrigin(ox, oy-1); err != nil {
 				return err
 			}
 		}
@@ -171,19 +171,19 @@ func search(g *gocui.Gui, v *gocui.View) error {
 	if l != "" {
 
 		ts := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
-		hash := md5.Sum([]byte(ts+PRIVATEKEY+PUBLICKEY))
+		hash := md5.Sum([]byte(ts + PRIVATEKEY + PUBLICKEY))
 		hashed := hex.EncodeToString(hash[:])
 		var Url *url.URL
 		Url, err := url.Parse("http://gateway.marvel.com/")
 		Url.Path += "/v1/public/characters"
 		parameters := url.Values{}
 		parameters.Add("ts", ts)
-		parameters.Add("apikey",PUBLICKEY)
-		parameters.Add("hash",hashed)
+		parameters.Add("apikey", PUBLICKEY)
+		parameters.Add("hash", hashed)
 		if l == OPTLIST {
 			parameters.Add("orderBy", "name")
 			parameters.Add("limit", "20")
-		}else {
+		} else {
 			parameters.Add("name", l)
 		}
 		Url.RawQuery = parameters.Encode()
@@ -209,16 +209,16 @@ func search(g *gocui.Gui, v *gocui.View) error {
 			if l == OPTLIST {
 				fmt.Fprintf(v, "List of first 20 Marvel characters:\n\n")
 				for i := 0; i < len(result.Datos.Results); i++ {
-					fmt.Fprintf(v, "%d.- %s\n",i+1, result.Datos.Results[i].Name)
+					fmt.Fprintf(v, "%d.- %s\n", i+1, result.Datos.Results[i].Name)
 				}
-			} else {
+			} else if len(result.Datos.Results) > 0 {
 
 				fmt.Fprintf(v, "Character: %s\n", result.Datos.Results[0].Name)
 				fmt.Fprintf(v, "\nDescription:\n%s\n", result.Datos.Results[0].Description)
 				fmt.Fprintf(v, "\nURI: %s\n", result.Datos.Results[0].ResUri)
 				picUrl := fmt.Sprintf("%s.%s", result.Datos.Results[0].Picture.Path, result.Datos.Results[0].Picture.Ext)
-				fmt.Fprintf(v, "\nPicture: %s\n", picUrl)
 				fmt.Fprintf(v, "\nComics: %d\n", result.Datos.Results[0].Comics.Available)
+				fmt.Fprintf(v, "\nPicture: %s\n", picUrl)
 				if err := DownloadFile("thumb.jpg", picUrl); err != nil {
 					return err
 				}
@@ -246,7 +246,10 @@ func search(g *gocui.Gui, v *gocui.View) error {
 				// convertOptions.FitScreen = true
 				convertOptions.Colored = true
 				converter := convert.NewImageConverter()
-				fmt.Fprintf(v, "\n%s",converter.ImageFile2ASCIIString("thumbsm.jpg", &convertOptions))
+				fmt.Fprintf(v, "\n%s", converter.ImageFile2ASCIIString("thumbsm.jpg", &convertOptions))
+			} else {
+				fmt.Fprintf(v, "Not found!")
+
 			}
 
 			return nil
@@ -288,12 +291,12 @@ func getLine(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 	i = strings.Index(l, "2.")
-	if i>-1 {
+	if i > -1 {
 		search(g, v)
 
 	}
 	i = strings.Index(l, "Exit")
-	if i>-1 {
+	if i > -1 {
 		if runtime.GOOS == "windows" {
 			cmd := exec.Command("cmd", "/c", "cls")
 			cmd.Stdout = os.Stdout
@@ -335,9 +338,9 @@ func keybindings(g *gocui.Gui) error {
 	return nil
 }
 
-func layout (g *gocui.Gui) error {
+func layout(g *gocui.Gui) error {
 	maxX, maxY := g.Size()
-	if v, err := g.SetView("side", 1, 1, 15, maxY-1); err != nil{
+	if v, err := g.SetView("side", 1, 1, 15, maxY-1); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
@@ -349,14 +352,14 @@ func layout (g *gocui.Gui) error {
 		fmt.Fprintln(v, OPTLIST)
 		fmt.Fprintln(v, OPTEXIT)
 	}
-	if v, err := g.SetView("main", 	16, 1, maxX-1, maxY-1); err != nil {
+	if v, err := g.SetView("main", 16, 1, maxX-1, maxY-1); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
 		fmt.Fprintln(v, "                               | |")
 		fmt.Fprintln(v, " _ __ ___   __ _ _ ____   _____| |")
-	    fmt.Fprintln(v, "| '_ ` _ \\ / _` | '__\\ \\ / / _ \\ |")
-	    fmt.Fprintln(v, "| | | | | | (_| | |   \\ V /  __/ |")
+		fmt.Fprintln(v, "| '_ ` _ \\ / _` | '__\\ \\ / / _ \\ |")
+		fmt.Fprintln(v, "| | | | | | (_| | |   \\ V /  __/ |")
 		fmt.Fprintln(v, "|_| |_| |_|\\__,_|_|    \\_/ \\___|_|")
 		fmt.Fprintln(v, "")
 		fmt.Fprintln(v, "Marvel API demo by @vhanla")
