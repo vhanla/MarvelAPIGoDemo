@@ -13,6 +13,6 @@ Make sure to edit `PUBLICKEY` and `PRIVATEKEY` constants in `main.go`file before
 Or get it one at https://developer.marvel.com/account
 
 Demo GIF:
-![image](https://lh3.googleusercontent.com/6gOnd_Qs2NozdRibXxsZQuQMQetyxr6T1ZZgW4bhA5vU6tFitbL7eW02HXyA_MfITBBgyxcjnv9ngg=w1366-h728-no)
+![image](https://lh3.googleusercontent.com/ajm6Is6z06Uqns_rzoVsWSyj5jLkMFJr8kFJCi5pKn5B5d4YyZWSAcLsUnQSxeyQyk_3szGdI3ufkQ=w962-h718-no)
 
 Works on Windows and Linux, fails on WSL due to its network limitations.
